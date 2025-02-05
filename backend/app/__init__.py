@@ -31,21 +31,16 @@ class Config:
 def create_app():
     """
     Creates and configures the Flask application.
-
-    This function initializes the Flask app with necessary configurations, including
-    enabling CORS, setting up JWT authentication, and registering blueprints for routes.
-
-    Returns:
-        Flask: The configured Flask application.
     """
-    app = Flask(__name__,
-                static_folder="../../frontend/build/static",
-                template_folder=os.path.join(os.path.dirname(__file__), "../../frontend/build"))
+    # Initialize Flask without static folder
+    app = Flask(__name__, static_folder=None)
     CORS(app, resources={r"/*": {"origins": "*"}})
     app.config.from_object(Config)
 
+    # Set up the frontend build directory path
+    frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend/build"))
+    
     db.init_app(app)
-
     with app.app_context():
         if app.config['SQLALCHEMY_DATABASE_URI'].startswith('sqlite'):
             db.session.execute(text('PRAGMA foreign_keys=ON'))
@@ -54,23 +49,50 @@ def create_app():
     Migrate(app, db)
     setup_logging(app)
 
+    # Register API routes
     from .routes.auth_routes import auth_bp
     from .routes.user_routes import user_bp
     from .routes.product_routes import product_bp
     from .routes.health_routes import health_bp
 
+    # Register blueprints without additional prefix since they already have their own
     app.register_blueprint(auth_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(product_bp)
     app.register_blueprint(health_bp)
 
-    @app.route("/", defaults={"path": ""})
-    @app.route("/<path:path>")
+    # Serve static files
+    @app.route('/static/<path:path>')
+    def serve_static(path):
+        return send_from_directory(os.path.join(frontend_dir, 'static'), path)
+
+    # Serve other static assets from root directory
+    @app.route('/<path:path>')
+    def serve_files(path):
+        if os.path.exists(os.path.join(frontend_dir, path)):
+            return send_from_directory(frontend_dir, path)
+        return serve_react_app('')
+
+    # Serve index.html and inject configuration
+    @app.route('/', defaults={'path': ''})
     def serve_react_app(path):
-        if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
-            return send_from_directory(app.static_folder, path)
-        else:
-            return render_template("index.html")
+        try:
+            with open(os.path.join(frontend_dir, 'index.html'), 'r') as f:
+                content = f.read()
+            
+            # Get backend URL from environment
+            backend_url = os.getenv('REACT_APP_BACKEND_SERVER', f'http://localhost:{os.getenv("PORT", "8081")}')
+            
+            # Inject the configuration
+            content = content.replace(
+                'window.__RUNTIME_CONFIG__={BACKEND_URL:"{{BACKEND_URL}}"}',
+                f'window.__RUNTIME_CONFIG__={{BACKEND_URL:"{backend_url}"}}'
+            )
+            
+            return content, 200, {'Content-Type': 'text/html'}
+        except Exception as e:
+            app.logger.error(f"Error serving index.html: {str(e)}")
+            return str(e), 500
 
     return app
 
