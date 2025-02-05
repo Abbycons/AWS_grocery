@@ -1,20 +1,22 @@
-// Get the backend URL from the current window location
+// Get the backend URL from environment variables or window location
 const getRuntimeConfig = () => {
     // Get the current window location
     const location = window.location;
-    const hostname = location.hostname;
     
-    // Always use port 8080 for localhost
-    const port = '8080';
+    // Get host and port from environment variables or defaults
+    const host = process.env.REACT_APP_BACKEND_HOST || location.hostname || 'localhost';
+    const port = process.env.REACT_APP_BACKEND_PORT || location.port || '8080';
     
     // Construct the backend URL
-    const origin = `http://${hostname}:${port}`;
+    const origin = `http://${host}:${port}`;
     
     // Log the configuration for debugging
-    console.log('Window location:', location);
-    console.log('Using hostname:', hostname);
-    console.log('Using port:', port);
-    console.log('Using backend URL:', origin);
+    console.log('Configuration:', {
+        location,
+        host,
+        port,
+        origin
+    });
     
     return {
         BACKEND_URL: `${origin}/api`  // Add /api prefix to all requests
