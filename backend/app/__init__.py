@@ -34,7 +34,16 @@ def create_app():
     """
     # Initialize Flask without static folder
     app = Flask(__name__, static_folder=None)
-    CORS(app, resources={r"/*": {"origins": "*"}})
+    
+    # Configure CORS to allow all origins and methods
+    CORS(app, resources={
+        r"/*": {
+            "origins": "*",
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"]
+        }
+    })
+    
     app.config.from_object(Config)
 
     # Set up the frontend build directory path
@@ -55,44 +64,31 @@ def create_app():
     from .routes.product_routes import product_bp
     from .routes.health_routes import health_bp
 
-    # Register blueprints without additional prefix since they already have their own
+    # Register blueprints - they already have their own prefixes
     app.register_blueprint(auth_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(product_bp)
     app.register_blueprint(health_bp)
 
-    # Serve static files
-    @app.route('/static/<path:path>')
-    def serve_static(path):
-        return send_from_directory(os.path.join(frontend_dir, 'static'), path)
+    # Log registered routes for debugging
+    app.logger.info("Registered routes:")
+    for rule in app.url_map.iter_rules():
+        app.logger.info(f"{rule.endpoint}: {rule.rule} [{', '.join(rule.methods)}]")
 
-    # Serve other static assets from root directory
-    @app.route('/<path:path>')
-    def serve_files(path):
-        if os.path.exists(os.path.join(frontend_dir, path)):
-            return send_from_directory(frontend_dir, path)
-        return serve_react_app('')
-
-    # Serve index.html and inject configuration
+    # Serve static files and assets
     @app.route('/', defaults={'path': ''})
-    def serve_react_app(path):
-        try:
-            with open(os.path.join(frontend_dir, 'index.html'), 'r') as f:
-                content = f.read()
+    @app.route('/<path:path>')
+    def serve(path):
+        # Skip API routes
+        if path.startswith('api/'):
+            return {'error': 'Not found'}, 404
             
-            # Get backend URL from environment
-            backend_url = os.getenv('REACT_APP_BACKEND_SERVER', f'http://localhost:{os.getenv("PORT", "8081")}')
+        # First try to find the file in the frontend build directory
+        if path != "" and os.path.exists(os.path.join(frontend_dir, path)):
+            return send_from_directory(frontend_dir, path)
             
-            # Inject the configuration
-            content = content.replace(
-                'window.__RUNTIME_CONFIG__={BACKEND_URL:"{{BACKEND_URL}}"}',
-                f'window.__RUNTIME_CONFIG__={{BACKEND_URL:"{backend_url}"}}'
-            )
-            
-            return content, 200, {'Content-Type': 'text/html'}
-        except Exception as e:
-            app.logger.error(f"Error serving index.html: {str(e)}")
-            return str(e), 500
+        # If not found, serve index.html
+        return send_from_directory(frontend_dir, 'index.html')
 
     return app
 

@@ -1,18 +1,29 @@
-// Get the runtime config from window object or use environment variables
+// Get the backend URL from the current window location
 const getRuntimeConfig = () => {
-    // Check if we have runtime config injected and it's not the template string
-    if (window.__RUNTIME_CONFIG__ && 
-        window.__RUNTIME_CONFIG__.BACKEND_URL && 
-        window.__RUNTIME_CONFIG__.BACKEND_URL !== "{{BACKEND_URL}}") {
-        return {
-            BACKEND_URL: window.__RUNTIME_CONFIG__.BACKEND_URL
-        };
-    }
+    // Get the current window location
+    const location = window.location;
+    const hostname = location.hostname;
     
-    // Fallback to default
+    // Always use port 8080 for localhost
+    const port = '8080';
+    
+    // Construct the backend URL
+    const origin = `http://${hostname}:${port}`;
+    
+    // Log the configuration for debugging
+    console.log('Window location:', location);
+    console.log('Using hostname:', hostname);
+    console.log('Using port:', port);
+    console.log('Using backend URL:', origin);
+    
     return {
-        BACKEND_URL: 'http://localhost:8081'
+        BACKEND_URL: `${origin}/api`  // Add /api prefix to all requests
     };
 };
 
-export const config = getRuntimeConfig(); 
+const config = getRuntimeConfig();
+
+// Log the final configuration
+console.log('Final config:', config);
+
+export { config }; 

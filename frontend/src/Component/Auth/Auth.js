@@ -4,6 +4,7 @@ import axios from 'axios';
 import { toast, Toaster } from 'react-hot-toast'; // Import react-hot-toast
 import './Auth.css';
 import logo from '../Assets/Frame2.png';
+import { config } from '../../config';  // Import our config
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -66,12 +67,12 @@ const LoginForm = ({ handleSwitch }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${process.env.REACT_APP_BACKEND_SERVER}/api/auth/login`, { email, password });
+      const response = await axios.post(`${config.BACKEND_URL}/auth/login`, { email, password });
       console.log(response.data);
       localStorage.setItem('token', response.data.access_token);
       window.location.href = '/';
     } catch (error) {
-      console.error(error.response.data);
+      console.error(error.response?.data);
       toast.error('Invalid username or password');
     }
   };
@@ -96,7 +97,8 @@ const RegisterForm = ({ handleSwitch }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${process.env.REACT_APP_BACKEND_SERVER}/api/auth/register`, { username: name, email, password });
+      console.log('Making request to:', `${config.BACKEND_URL}/auth/register`);
+      const response = await axios.post(`${config.BACKEND_URL}/auth/register`, { username: name, email, password });
       console.log(response.data);
       handleSwitch();
       toast.success('Registration successful. Please log in.');
