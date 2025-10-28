@@ -47,6 +47,76 @@ GroceryMate is a modern, full-featured e-commerce platform designed for seamless
   - Multiple payment options.
   - Automatic total price calculation.
 
+
+<img title="a title" alt="Alt text" src="AWS_grocery.png">
+🚀 GroceryMate AWS with Terraform
+
+This project automates the deployment of a production-ready, scalable AWS infrastructure 
+for the GroceryMate e-commerce application using Terraform.
+
+🏗️ Architecture Overview
+
+The system is built on a secure, multi-tier architecture within an Amazon VPC:
+
+● Web Tier (Public Subnets):
+   ○ Application Load Balancer (ALB) distributes incoming user traffic.
+   ○ EC2 Instances in an Auto Scaling Group run the GroceryMate app 
+     inside Docker containers, ensuring high availability and scalability.
+
+● Data & Logic Tier (Private Subnets):
+  ○ Amazon RDS (PostgreSQL) manages the application database securely, 
+    isolated from the public internet.
+  ○ AWS Lambda function performs periodic health checks, triggered every 
+    5 minutes by Amazon CloudWatch Events.
+
+● Storage & Assets:
+
+  ○ Amazon S3 is used for storing static assets and backups.
+
+
+• VPC (Virtual Private Cloud): Your isolated network within AWS.
+• Public Subnets: "Rooms" with internet access, hosting the Load Balancer.
+• Private Subnets: "Rooms" shielded from the internet, hosting backend EC2 instances and the RDS database for added security.
+• EC2 Instances: Virtual servers that run the GroceryMate application inside Docker containers.
+• ALB (Application Load Balancer): Acts as a traffic cop, routing user requests to healthy EC2 instances.
+• RDS (PostgreSQL): The managed database service storing all application data.
+• S3 Bucket: Cloud storage for static files like images.
+• Lambda Function: A serverless function that automatically checks the health of your application.
+• EventBridge: A scheduler that triggers the Lambda function at regular intervals.
+
+⚠️ Important Note on NAT Gateway:
+A NAT Gateway allows resources in private subnets to access the internet (e.g., for software updates).
+While the Terraform code is included in modules/main_vpc.tf, it is currently commented out.
+
+Reason: Creating a NAT Gateway requires the ec2:AllocateAddress permission, which is often
+restricted on student AWS accounts.
+
+Workaround: For this project, a NAT Gateway was manually created via the AWS Console. If you have full admin
+permissions, you can uncomment the relevant code to create it automatically with Terraform.
+
+
+Project Structure
+
+AWS_grocery_version2/
+├── backend/                 # Backend application code (Python/Flask)
+├── docs/                    # Architecture diagrams and documentation
+├── frontend/                # Frontend application code (React/JavaScript)
+├── infrastructure/
+│   └── my_terraform_project/
+│       ├── modules/         # Reusable Terraform modules (ALB, EC2, RDS, etc.)
+│       ├── scripts/
+│       │   ├── install_docker.sh           # Script to install Docker on EC2
+│       │   └── lambda_health_check_template.py # Lambda function code template
+│       ├── build_lambda_zip.sh    # Script to package Lambda code for deployment
+│       ├── main.tf          # Main Terraform configuration
+│       ├── variables.tf     # Input variable definitions
+│       ├── outputs.tf       # Output values (e.g., ALB URL)
+│       └── terraform.tfvars.example # Example variables file (copy to terraform.tfvars)
+└── README.md
+
+his infrastructure provides a fault-tolerant and secure foundation 
+for deploying modern web applications on AWS.
+
 ## 📸 Screenshots & Demo
 
 ![imagen](https://github.com/user-attachments/assets/ea039195-67a2-4bf2-9613-2ee1e666231a)
@@ -161,6 +231,8 @@ We welcome contributions! Please follow these steps:
 ## 📜 License
 
 This project is licensed under the MIT License.
+
+
 
 
 

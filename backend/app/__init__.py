@@ -30,6 +30,10 @@ GITHUB_RELEASE_URL = f"https://github.com/{GITHUB_USERNAME}/{REPO_NAME}/releases
 
 class Config:
     """App configuration variables."""
+
+    def __init__(self):
+        pass
+
     POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
     POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "postgres")
     POSTGRES_DB = os.getenv("POSTGRES_DB", "postgres")
@@ -77,6 +81,7 @@ def fetch_frontend():
     """
     Fetches the latest frontend build from GitHub Releases and ensures it's placed in frontend/build.
     """
+    global temp_extract_path
     if os.path.exists(FRONTEND_BUILD_PATH):
         print("Frontend build is already present. Checking for updates...")
         latest_release_timestamp = get_github_release_timestamp()

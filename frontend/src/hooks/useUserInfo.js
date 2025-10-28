@@ -6,14 +6,9 @@ const useUserInfo = () => {
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [users, setUsers] = useState([]);
   const [s3Config, setS3Config] = useState({
-    USE_S3_STORAGE: false,
-    S3_BUCKET: '',
-    S3_REGION: ''
+    USE_S3_STORAGE: true,
+    S3_BUCKET: 'grocerymate-abg',
   });
-
-  useEffect(() => {
-    fetchConfig();
-  }, []);
 
   const fetchConfig = async () => {
     try {
@@ -61,7 +56,7 @@ const useUserInfo = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setUsers(data); // Update the users list
+        setUsers(data);
       } else {
         console.error('Failed to fetch users');
       }
@@ -71,10 +66,7 @@ const useUserInfo = () => {
   };
 
   const updateAvatarInState = (newAvatar) => {
-    const newAvatarUrl = newAvatar;
-    setAvatarUrl(newAvatarUrl);
-    
-    // Update the users list locally to reflect the new avatar for the current user
+    setAvatarUrl(newAvatar);
     setUsers((prevUsers) =>
       prevUsers.map((user) =>
         user.username === username ? { ...user, avatar: newAvatar } : user
@@ -82,29 +74,28 @@ const useUserInfo = () => {
     );
   };
 
+  const getAvatarUrl = (username) => {
+    const user = users.find((user) => user.username === username);
+    if (user && user.avatar) {
+      return user.avatar;
+    }
+    return `${process.env.REACT_APP_BACKEND_SERVER}/api/me/avatar/user_default.png`;
+  };
+
+  // ✅ Now all effects are *inside* the hook
   useEffect(() => {
+    fetchConfig();
     fetchUserInfo();
     fetchAllUsers();
   }, []);
 
-  const getAvatarUrl = (username) => {
-  const user = users.find((user) => user.username === username);
-
-  if (user && user.avatar) {
-    // User has an avatar, use whatever URL backend provides
-    return user.avatar;  // This is already the proxy URL from backend
-  }
-
-  // Default avatar through backend proxy
-  return `${process.env.REACT_APP_BACKEND_SERVER}/api/me/avatar/user_default.png`;
-};
   return {
     username,
     avatarUrl,
     users,
     getAvatarUrl,
     fetchUserInfo,
-    updateAvatarInState, // This will update the avatar directly
+    updateAvatarInState,
   };
 };
 
