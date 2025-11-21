@@ -1,8 +1,12 @@
-from flask import jsonify, request, current_app, send_from_directory
+import os
+
+from flask import jsonify, request, current_app, send_from_directory, redirect
 from flask_jwt_extended import get_jwt_identity, jwt_required
+
+from ..models.user_model import User
 from ..services.user_service import add_to_favorites, get_user_favorites, remove_from_favorites, sync_basket_service, \
     get_user_basket, remove_from_basket_service, add_product_to_purchased, get_user_purchased_products, get_user_info, \
-    clear_user_basket, save_avatar, UPLOAD_FOLDER, get_all_users
+    clear_user_basket, save_avatar, UPLOAD_FOLDER, get_all_users, get_avatar_url
 
 
 @jwt_required()
@@ -227,9 +231,14 @@ def upload_avatar():
 
 def serve_avatar(filename):
     """
-    Serve the avatar image from the avatar folder.
+    Serve the avatar image from the local avatar folder.
     """
-    try:
+    local_avatar_path = os.path.join(UPLOAD_FOLDER, filename)
+
+    if os.path.exists(local_avatar_path):
         return send_from_directory(UPLOAD_FOLDER, filename)
-    except FileNotFoundError:
-        return send_from_directory(UPLOAD_FOLDER, 'user_default.png')
+
+    default_avatar_path = os.path.join(UPLOAD_FOLDER, "user_default.png")
+    if os.path.exists(default_avatar_path):
+        return send_from_directory(UPLOAD_FOLDER, "user_default.png")
+    return jsonify({"error": "Avatar not found"}), 404
